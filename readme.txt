@@ -1,7 +1,7 @@
 # Directory for example files for step by step process to go from msprime simulated data to Neand called bedfiles and desert calls
 
 # NULL DATA
-# 1) Generate null simulated vcfs and windows S*-scores : slrun.Sstar.Sriram.null.nomig.sh
+# 1) Generate null simulated vcfs and windowed S*-scores
 
 $ mkdir null/
 $ cd null/
@@ -12,19 +12,20 @@ $ mv *.vcf.* vcfs/
 $ mv *.windowcalc_out.gz RegionFiles/
 $ ls -C RegionFiles/ | cut -f 3 -d '_' | sort - | uniq - > Sriram.chr_list
 
-# 2) Generate match-pvalues and match-database from null data : write_config_file.sh , run_cetus.sh
+# 2) Generate match-pvalues and match-database from null data
 # see https://github.com/lparsons/archaic_match & https://bitbucket.org/lance_parsons/abwolf_match_pvalue_simulations/ 
 # for setting up match_pvalue_simulations environment and scripts
 
 $ sh write_config_file.sh n1_0.0_mAfB_0.0_mBAf_0.0_mAfEu_0.0_mEuAf_0.0
 $ cd null/
 $ source activate match_pvalue_simulations
+	## run_cetus.sh:
 	## set $configfile=="config_n1_0.0_mAfB_0.0_mBAf_0.0_mAfEu_0.0_mEuAf_0.0.yaml"
 $ sh run_cetus.sh &> run_cetus.o
 
 
-# 3) Generate S*-score ecdfs from null data : slrun.SstarECDFpvalueCalculation.sh
-
+# 3) Generate S*-score ecdfs from null data
+	## slrun.SstarECDFpvalueCalculation.sh:
 	## comment out "Calculating S*-pvalues" cmd and use only "Generating ECDFs" cmd
 	## set $mdl=="Sriram"
 $ cd null/
@@ -48,12 +49,13 @@ $ ls -C RegionFiles/ | cut -f 3 -d '_' | sort - | uniq - > Sriram.chr_list
 $ sh write_config_file.sh n1_0.1_mAfB_0.0_mBAf_0.0_mAfEu_0.0_mEuAf_0.0
 $ cd n1_0.1_mAfB_0.0_mBAf_0.0_mAfEu_0.0_mEuAf_0.0/
 $ source activate match_pvalue_simulations
-        ## set $configfile=="config_n1_0.1_mAfB_0.0_mBAf_0.0_mAfEu_0.0_mEuAf_0.0.yaml"
+        ## run_cetus.sh:
+	## set $configfile=="config_n1_0.1_mAfB_0.0_mBAf_0.0_mAfEu_0.0_mEuAf_0.0.yaml"
 $ sh run_cetus.sh &> run_cetus.o
 
 
 # 6) Generate S*-pvalue for admix data and call Neanderthal haplotypes as bedfiles
-
+	## slrun.SstarECDFpvalueCalculation.sh:
 	## Use only the "Calculating S*-pvalues" cmd
 	## set $mdl=="Sriram
 	## set $admix=="n1_0.1_mAfB_0.0_mBAf_0.0_mAfEu_0.0_mEuAf_0.0"
@@ -88,29 +90,29 @@ $ for dir in $(ls -C | grep n1_); do
 done > admixture_Sstar.txt
 
 
-# CALCULATING DESERTS ; Requires simulatied chromosome be >=10Mb
-# 9) Combine introgressed bedfiles and split chromosomes in to 5_to_10Mb windows
+# CALCULATING DESERTS ; Requires simulated chromosome be >=10Mb
+# 9) Combine introgressed bedfiles and split chromosomes into 5_to_10Mb windows
 
 $ cd n1_0.1_mAfB_0.0_mBAf_0.0_mAfEu_0.0_mEuAf_0.0/bedfiles/
-$ cat *.bed.merged.gz > Sriram_nonAfr_n1_0.1_mAfB_0.0_mBAf_0.0_mAfEu_0.0_mEuAf_0.0.bed.merged.gz
+$ cat *.bed.merged.gz > Sriram_nonAfr_ALL_n1_0.1_mAfB_0.0_mBAf_0.0_mAfEu_0.0_mEuAf_0.0.bed.merged.gz
 $ python split_chromosomes.temp.loop.py \
-    Sriram_nonAfr_n1_0.1_mAfB_0.0_mBAf_0.0_mAfEu_0.0_mEuAf_0.0.bed.merged.gz \			# infile name
-    Sriram_nonAfr_n1_0.1_mAfB_0.0_mBAf_0.0_mAfEu_0.0_mEuAf_0.0.bed.merged.5_to_10Mb.gz \	# outfile name
+    Sriram_nonAfr_ALL_n1_0.1_mAfB_0.0_mBAf_0.0_mAfEu_0.0_mEuAf_0.0.bed.merged.gz \			# infile name
+    Sriram_nonAfr_ALL_n1_0.1_mAfB_0.0_mBAf_0.0_mAfEu_0.0_mEuAf_0.0.bed.merged.5_to_10Mb.gz \	# outfile name
     10000000											# simulated_chr_length
 
 
 # 10) Calculate number of windows with admixture proportion below significant threshold
 
-$ zcat Sriram_nonAfr_n1_0.1_mAfB_0.0_mBAf_0.0_mAfEu_0.0_mEuAf_0.0.bed.merged.5_to_10Mb.gz \
+$ zcat Sriram_nonAfr_ALL_n1_0.1_mAfB_0.0_mBAf_0.0_mAfEu_0.0_mEuAf_0.0.bed.merged.5_to_10Mb.gz \
     | awk 'BEGIN {OFS="\t"} {print $0, "0.1", "0.0"}' \		# add columns for n1_admixture and n2_admixture level
-    > Sriram_nonAfr_n1_0.1_mAfB_0.0_mBAf_0.0_mAfEu_0.0_mEuAf_0.0.bed.merged.5_to_10Mb
+    > Sriram_nonAfr_ALL_n1_0.1_mAfB_0.0_mBAf_0.0_mAfEu_0.0_mEuAf_0.0.bed.merged.5_to_10Mb
 $ Rscript toPct_Int.1_to_15Mb.R \
-    Sriram_nonAfr_n1_0.1_mAfB_0.0_mBAf_0.0_mAfEu_0.0_mEuAf_0.0.bed.merged.5_to_10Mb \	# infile name
+    Sriram_nonAfr_ALL_n1_0.1_mAfB_0.0_mBAf_0.0_mAfEu_0.0_mEuAf_0.0.bed.merged.5_to_10Mb \	# infile name
     2014 \										# 2x #_individuals
     Sriram \										# model name
     0.000316 \										# admixture proprotion threshold
     Sriram.chr_list \									# list of chormosomes
-    > Sriram_nonAfr_n1_0.1_mAfB_0.0_mBAf_0.0_mAfEu_0.0_mEuAf_0.0.bed.merged.5_to_10Mb.prop_blw_thrhld
-$ rm Sriram_nonAfr_n1_0.1_mAfB_0.0_mBAf_0.0_mAfEu_0.0_mEuAf_0.0.bed.merged.5_to_10Mb
+    > Sriram_nonAfr_ALL_n1_0.1_mAfB_0.0_mBAf_0.0_mAfEu_0.0_mEuAf_0.0.bed.merged.5_to_10Mb.prop_blw_thrhld
+$ rm Sriram_nonAfr_ALL_n1_0.1_mAfB_0.0_mBAf_0.0_mAfEu_0.0_mEuAf_0.0.bed.merged.5_to_10Mb
 
 
